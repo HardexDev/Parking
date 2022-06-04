@@ -49,7 +49,7 @@ void *timer_function(void* arg){
     while(true){
         Attendre(3600);
         if(heure == 18 || heure == 19 || heure == 20 || heure == 21){
-            printf("Heure : %d       zone de débordement augmentation de %d places\n", heure, aug);
+            printf("\n\nHeure : %d       zone de débordement augmentation de %d places\n\n\n", heure, aug);
             pthread_mutex_lock(&mutex_cpt);
             NB_PLACE_NON_ABO += aug;
             //printf("Nombre de places non abonnées : %d\n", NB_PLACE_NON_ABO);
@@ -60,7 +60,7 @@ void *timer_function(void* arg){
             NB_PLACE_NON_ABO -= 4*aug; //peut être négatif -> personne ne peut rentrer
             //printf("Nombre de places non abonnées : %d\n", NB_PLACE_NON_ABO);
             pthread_mutex_unlock(&mutex_cpt);
-            printf("Heure : %d        fin zone de débordement nombre maximal de place non abo dispo : %d\n", heure, nb_place_non_abo_init);
+            printf("\n\nHeure : %d        fin zone de débordement nombre maximal de place non abo dispo : %d\n\n\n", heure, nb_place_non_abo_init);
         }
         if(heure == 24){
             heure = 0;
@@ -75,6 +75,7 @@ void *timer_function(void* arg){
 void traitantSIGUSR2(int num) {
     if (num!=SIGUSR2)
         printf("erreur SIGUSR2\n");
+    //exit(1);
 }
 void traitantSIGUSR1(int num) {
     if (num!=SIGUSR1)
@@ -130,7 +131,7 @@ void voiture(int arg){
 
 
 void *parking(void* arg){
-    pthread_t Abo_sur_place_non_abo[NB_PLACE_NON_ABO];
+    pthread_t Abo_sur_place_non_abo[NB_PLACE_NON_ABO*2];
     for(int i = 0; i < NB_PLACE_NON_ABO; i++){
         Abo_sur_place_non_abo[i] = 0;
     }
@@ -204,13 +205,13 @@ void *parking(void* arg){
                 if(!done){
                     NB_PLACE_ABO++;
                 }
-                pthread_kill(response.threadID, SIGUSR2);
-                printf("le feu passe au vert \n");
+                pthread_kill(response.threadID, SIGUSR1);
+                printf("le feu passe au vert\n");
                 pthread_cond_wait(&attendre, &mutex);//il se met en attente
             }
             else{
                 NB_PLACE_NON_ABO++;
-                pthread_kill(response.threadID, SIGUSR2);
+                pthread_kill(response.threadID, SIGUSR1);
                 printf("le feu passe au vert \n");
                 pthread_cond_wait(&attendre, &mutex);//il se met en attente
             }
