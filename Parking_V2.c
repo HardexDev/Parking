@@ -16,9 +16,10 @@
 int NB_PLACE_ABO = 20;
 int NB_PLACE_NON_ABO = 70;
 float FAC_DEBORDEMENT = 20;
-float temps_accel = 1;
-int TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = 1200; //temps maximum avant qu'une nouvelle voiture soit créée 
-int PROBA_ABONNE = 0.3;
+float temps_accel = 2;
+int TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = 600; //temps maximum avant qu'une nouvelle voiture soit créée 
+int TEMPS_MAX_DANS_LE_PARKING = 86400; //temps maximum qu'une voiture peut passer dans le parking (1jour)
+float PROBA_ABONNE = 0.3;
 
 pthread_mutex_t mutex_cpt = PTHREAD_COND_INITIALIZER;
 pthread_cond_t attendre = PTHREAD_MUTEX_INITIALIZER;
@@ -111,7 +112,7 @@ void voiture(int arg){
     pthread_cond_signal(&attendre);
 
 
-    Attendre(rand()%86400);
+    Attendre(rand()%TEMPS_MAX_DANS_LE_PARKING);
     printf("La Voiture %d veut sortir du parking donc envoye un message\n", (int)arg);
     usager.type = 1;
     if(msgsnd(msg_id, &usager, sizeof(Usager) - sizeof(long), 0) == -1) {
@@ -122,6 +123,7 @@ void voiture(int arg){
         perror("Erreur de reception reponse \n");
         exit(1);
     };
+    Attendre(rand()%5);
     printf("La Voiture %d sort du parking (verrouille la ressource critique)\n", (int)arg);
     printf("le feu passe au rouge\n");
     printf("La Voiture %d est sortie du parking et part (déverrouille la ressource critique)\n\n", (int)arg);
@@ -131,7 +133,7 @@ void voiture(int arg){
 
 
 void *parking(void* arg){
-    pthread_t Abo_sur_place_non_abo[NB_PLACE_NON_ABO*2];
+    pthread_t Abo_sur_place_non_abo[NB_PLACE_NON_ABO];
     for(int i = 0; i < NB_PLACE_NON_ABO; i++){
         Abo_sur_place_non_abo[i] = 0;
     }
@@ -152,7 +154,7 @@ void *parking(void* arg){
         Retour reponse;
         reponse.threadID = msg.threadID;
         if(msg.type == 0){ //entrer
-            if(msg.estAbonne == 1){
+            if(msg.estAbonne == 1){ //non abonné
                 if(NB_PLACE_NON_ABO > 0){
                     NB_PLACE_NON_ABO--;
                     printf("\nNombre de places non abonnées restantes: %d\nle feu passe au vert\n", NB_PLACE_NON_ABO);
@@ -172,7 +174,7 @@ void *parking(void* arg){
                     }
                 }
             }
-            else{
+            else{ //abonné
                 if(NB_PLACE_ABO > 0){
                     NB_PLACE_ABO--;
                     printf("Nombre de places abonnées restantes: %d\nle feu passe au vert\n", NB_PLACE_ABO);
@@ -214,8 +216,8 @@ void *parking(void* arg){
                 }
             }
         }
-        else{ //sortir
-            if(msg.estAbonne == 1){ //verif sa place pour decrémenter
+        if(msg.type == 1){ //sortir
+            if(msg.estAbonne == 2){ //abonné verif sa place pour decrémenter
                 bool done = false;
                 for(int i = 0; i < NB_PLACE_NON_ABO; i++){
                     if(Abo_sur_place_non_abo[i] == msg.threadID){
@@ -233,7 +235,7 @@ void *parking(void* arg){
                     perror("Erreur de envoie requete \n");
                     exit(1);
                 }
-                printf("le feu passe au vert (abo)\n");
+                printf("le feu passe au vert\n");
                 pthread_cond_wait(&attendre, &mutex);//il se met en attente
             }
             else{
@@ -246,6 +248,12 @@ void *parking(void* arg){
                 printf("le feu passe au vert\n");
                 pthread_cond_wait(&attendre, &mutex);//il se met en attente
             }
+            printf("\nNombre de places non abonnées restantes: %d  Nombre de places abonnées restantes: %d\n\n", NB_PLACE_NON_ABO, NB_PLACE_ABO);
+        }
+        if(msg.type != 0 && msg.type != 1){
+            printf("Erreur de type\n");
+            printf("type : %d \n", msg.type);
+            exit(0);
         }
         pthread_mutex_unlock(&mutex_cpt);
     }
@@ -266,8 +274,8 @@ int main(int argc, char *argv[]) // nb place abo - nb place non abo - facteur te
 {
     printf("%d\n", argc-1);
     if(argc-1 != 0){
-        if (argc-1 < 4 || argc-1 > 6) {
-            fprintf(stderr,"Nombre de place abonées : <nb places> \nNombre de place non abonées : <nb places>\nTaille zone de debordement <facteur %%>\nFacteur temps : <1 heure simulé = X secondes réel>\noptionnel :\nTemps max avant génération de la prochaine voiture <temps en secondes> default : 3600\nProbabilité de génération d'une voiture abonnée <probabilité> default : 0.2\n");
+        if (argc-1 < 4 || argc-1 > 7) {
+            fprintf(stderr,"Nombre de place abonées : <nb places> \nNombre de place non abonées : <nb places>\nTaille zone de debordement <facteur %%>\nFacteur temps : <1 heure simulé = X secondes réel>\noptionnel :\nTemps max avant génération de la prochaine voiture <temps en secondes> default : 3600\nTemps max qu'une voiture peut passer dans le parking <temps en secondes> default : 86400\nProbabilité de génération d'une voiture abonnée <probabilité> default : 0.3\n");
             return 1;
         }
         else{
@@ -286,18 +294,27 @@ int main(int argc, char *argv[]) // nb place abo - nb place non abo - facteur te
                 temps_accel=atof(argv[4]);
                 TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = atoi(argv[5]);
                 break;
+            case 6:
+                NB_PLACE_ABO=atoi(argv[1]);
+                NB_PLACE_NON_ABO=atoi(argv[2]);
+                FAC_DEBORDEMENT=atof(argv[3]);
+                temps_accel=atof(argv[4]);
+                TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = atoi(argv[5]);
+                TEMPS_MAX_DANS_LE_PARKING = atoi(argv[6]);
+                break;
             default:
                 NB_PLACE_ABO=atoi(argv[1]);
                 NB_PLACE_NON_ABO=atoi(argv[2]);
                 FAC_DEBORDEMENT=atof(argv[3]);
                 temps_accel=atof(argv[4]);
                 TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = atoi(argv[5]);
+                TEMPS_MAX_DANS_LE_PARKING = atoi(argv[6]);
                 PROBA_ABONNE = atof(argv[6]);
                 break;
             }
         }            
     }
-
+    srand(time(NULL));
     // Générer clé aléatoire pour la file de message
     key_t key;
     if ((key = ftok("./", 'A')) == -1) {
