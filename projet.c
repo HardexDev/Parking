@@ -23,6 +23,7 @@ pthread_cond_t attendre = PTHREAD_COND_INITIALIZER;
 typedef struct {
     bool estAbonne;
     int code;
+    pthread_t threadID;
 } Usager;
 
 int msg_id;
@@ -59,6 +60,7 @@ int creerUsager()
     Usager usager;
     usager.estAbonne = rand_abonne;
     usager.code = code;
+    usager.threadID = pthread_self();
 
     printf("Usager créé\nEst abonné : %d\nCode Abonné : %d\n", usager.estAbonne, usager.code);
 
@@ -86,7 +88,7 @@ int creerMediateur()
         }
 
         printf("Le médiateur lit dans la file de messages : \n");
-        printf("Usager lu dans la file\nEst abonné : %d\nCode Abonné : %d\n", response.estAbonne, response.code);
+        printf("Usager lu dans la file\nEst abonné : %d\nCode Abonné : %d\nThreadID : %ld\n", response.estAbonne, response.code, response.threadID);
     }
 }
 
