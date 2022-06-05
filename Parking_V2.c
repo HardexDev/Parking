@@ -16,7 +16,7 @@
 int NB_PLACE_ABO = 20;
 int NB_PLACE_NON_ABO = 70;
 float FAC_DEBORDEMENT = 20;
-float temps_accel = 2;
+float temps_accel = 2; //1 heure simulée = 2 secondes réelles
 int TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = 600; //temps maximum avant qu'une nouvelle voiture soit créée 
 int TEMPS_MAX_DANS_LE_PARKING = 86400; //temps maximum qu'une voiture peut passer dans le parking (1jour)
 float PROBA_ABONNE = 0.3;
@@ -47,7 +47,7 @@ void Attendre(int temps_simule_secondes){
 
 
 void *timer_function(void* arg){
-    int heure = 9; //commence a 9h comme ca on décremente pas le nombre de place à la premiere itération
+    int heure = 7; //commencer avant 8h pour décrémenter le nombre de place non abonnées suite a la zone de débordement
     int nb_place_non_abo_init = NB_PLACE_NON_ABO;
     int aug = (int)NB_PLACE_NON_ABO*(FAC_DEBORDEMENT/4)/100;
     while(true){
@@ -142,7 +142,6 @@ void *parking(void* arg){
     printf("Nombre de places abonnées : %d\n", NB_PLACE_ABO);
     printf("Nombre de places total : %d\n", NB_PLACE_NON_ABO+NB_PLACE_ABO);
     while (1) {
-        // Le médiateur lit continuellement dans la file de messages
         Usager msg;
         if (msgrcv(msg_id, &msg, sizeof(Usager)- sizeof(long), 0, 0) == -1) {
             perror("Erreur de lecture requete \n");
