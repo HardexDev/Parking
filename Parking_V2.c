@@ -15,9 +15,9 @@
 
 int NB_PLACE_ABO = 20;
 int NB_PLACE_NON_ABO = 70;
-float FAC_DEBORDEMENT = 20;
+float FAC_DEBORDEMENT = 20; //20% des places sont bloquées le jour
 float temps_accel = 2; //1 heure simulée = 2 secondes réelles
-int TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = 600; //temps maximum avant qu'une nouvelle voiture soit créée 
+int TEMPS_MAX_AVANT_PROCHAINE_VOITURE_SEC = 3600; //temps maximum avant qu'une nouvelle voiture soit créée 
 int TEMPS_MAX_DANS_LE_PARKING = 86400; //temps maximum qu'une voiture peut passer dans le parking (1jour)
 float PROBA_ABONNE = 0.3;
 
@@ -107,7 +107,21 @@ void voiture(int arg){
     }
     printf("La Voiture %d entre dans le parking (verrouille la ressource critique)\n", (int)arg);
     printf("le feu passe au rouge\n");
+    if(est_abonne == 1){
+        printf("La Voiture %d prend un ticket\n", (int)arg);
+        Attendre(rand()%5);
+        printf("La barrière s'ouvre\n");
+        Attendre(rand()%5);
+        printf("La barrière se ferme\n");
+    }
+    else{
+        printf("La Voiture %d est abonnée la barrière s'ouvre automatiquement\n", (int)arg);
+        Attendre(rand()%5);
+        printf("La barrière se ferme\n");
+    }
+    
     Attendre(rand()%5);
+
     printf("La Voiture %d est garée (déverrouille la ressource critique)\n\n", (int)arg);
     pthread_cond_signal(&attendre);
 
