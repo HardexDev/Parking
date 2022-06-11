@@ -47,25 +47,25 @@ void Attendre(int temps_simule_secondes){
 
 
 void *timer_function(void* arg){
-    int heure = 7; //commencer avant 8h pour décrémenter le nombre de place non abonnées suite a la zone de débordement
+    int heure = 17; //commencer avant 8h pour décrémenter le nombre de place non abonnées suite a la zone de débordement
     int nb_place_non_abo_init = NB_PLACE_NON_ABO;
-    int aug = (int)NB_PLACE_NON_ABO*(FAC_DEBORDEMENT/4)/100;
+    int aug = (int)NB_PLACE_NON_ABO*(FAC_DEBORDEMENT/6)/100;
     while(true){
         Attendre(3600);
-        if(heure == 18 || heure == 19 || heure == 20 || heure == 21 || heure == 8){
+        if(heure == 18 || heure == 19 || heure == 20 || heure == 21 || heure == 22 || heure == 23 || heure == 24){
             pthread_mutex_lock(&mutex_cpt);
-            if(heure == 18 || heure == 19 || heure == 20 || heure == 21){
-                printf("\n\nHeure : %d       zone de débordement augmentation de %d places\n\n\n", heure, aug);
+            if(heure == 19 || heure == 20 || heure == 21 || heure == 22 || heure == 23 || heure == 24){
+                printf("\n\nHeure : %d       zone de débordement augmentation de %d places\n", heure, aug);
                 printf("NB places anciennement disponible : %d\n", NB_PLACE_NON_ABO);
                 NB_PLACE_NON_ABO += aug;
-                printf("NB places maintenant disponible: %d\n", NB_PLACE_NON_ABO);
+                printf("NB places maintenant disponible: %d\n\n\n", NB_PLACE_NON_ABO);
                 
             }
-            if(heure == 8){
-                printf("\n\nHeure : %d        fin zone de débordement nombre maximal de place non abo dispo : %d\n\n\n", heure, nb_place_non_abo_init);
+            if(heure == 18){
+                printf("\n\nHeure : %d        début de la zone de débordement réduction du nombre de place disponible : nombre maximal de place non abo dispo : %d\n", heure, nb_place_non_abo_init - 6*aug);
                 printf("NB places anciennement disponible : %d\n", NB_PLACE_NON_ABO);
-                NB_PLACE_NON_ABO -= 4*aug; //peut être négatif -> personne ne peut rentrer
-                printf("NB places maintenant disponible: %d\n", NB_PLACE_NON_ABO);
+                NB_PLACE_NON_ABO -= 6*aug; //peut être négatif -> personne ne peut rentrer
+                printf("NB places maintenant disponible: %d\n\n\n", NB_PLACE_NON_ABO);
                 
             }
             pthread_mutex_unlock(&mutex_cpt);
