@@ -141,6 +141,15 @@ void voiture(int arg){
     printf("La Voiture %d sort du parking (verrouille la ressource critique)\n", (int)arg);
     printf("le feu passe au rouge\n");
     printf("La Voiture %d est sortie du parking et part (déverrouille la ressource critique)\n\n", (int)arg);
+
+    if (NB_VOITURES > 0) {
+        NB_VOITURES--;
+    }
+
+    if (NB_VOITURES == 0) {
+        printf("Toutes les voitures sont parties, la simulation s'arrête\n");
+        exit(0);
+    }
     pthread_cond_signal(&attendre);
     return(NULL);
 }
@@ -281,7 +290,7 @@ void generateur_voiture(int arg){
         num++;
 
         if (NB_VOITURES != -1 && num == NB_VOITURES) {
-            exit(0);
+            break;
         }
     }
     
